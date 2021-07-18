@@ -24,7 +24,7 @@ public class Player : KinematicBody2D
     [Export] int ATTACKDELTAFRAMES = 5;
     [Export] int ATTACKFRAMES = 10;
     [Export] int ATTACKMAGNITUDE = 200;
-    [Export] int COYOTEFRAMES = 5;
+    [Export] int COYOTEFRAMES = 3;
     [Export] int GRAVITY = 500;
     [Export] int INPUTBUFFERFRAMES = 5;
     [Export] int JUMPFRAMES = 8;
@@ -75,7 +75,7 @@ public class Player : KinematicBody2D
         switch (state)
         {
             case PlayerState.Attack:
-
+            
                 AttackTowardMouse(delta);
                 velocity = MoveAndSlide(velocity, E2);
 
@@ -97,6 +97,7 @@ public class Player : KinematicBody2D
             case PlayerState.Move:
 
                 // [ TODO ] Add coyote frames
+
                 SetInputs();
 
                 if (isAttacking)
@@ -105,6 +106,7 @@ public class Player : KinematicBody2D
                     attackDirection = GetLocalMousePosition().Normalized();
                 }
 
+                HandleCoyoteFrames();
                 UpdateVelocityX(delta);
                 UpdateVelocityY(delta);
 
@@ -179,6 +181,24 @@ public class Player : KinematicBody2D
         return Vector2.Zero;
     }
 
+    private void HandleCoyoteFrames()
+    {
+        if (coyoteFrame <= COYOTEFRAMES)
+        {
+            coyoteFrame++;
+        }
+
+        if (IsOnFloor())
+        {
+            coyoteFrame = 0;
+        }
+
+        if (isAttacking)
+        {
+            coyoteFrame = COYOTEFRAMES + 1;
+        }
+    }
+
     private float HelperMoveToward(float current, float desire, float acceleration)
 	{
 		return (E1 * current).MoveToward(E1 * desire, acceleration).x;
@@ -200,15 +220,22 @@ public class Player : KinematicBody2D
     private void UpdateVelocityY(float delta)
     {
         // [ TODO ] Make where the conditions that determine if you can do stuff like isJumping and canWallJump into a separate function
-        // Need to add a lock to the jump from teh wall. 
-
+        
         // Gravity
-        velocity.y = HelperMoveToward(velocity.y, SPEEDYMAX, GRAVITY * delta);
+        if (!IsOnFloor() && coyoteFrame <= COYOTEFRAMES)
+        {
+            velocity.y = 0;
+        }
+        else 
+        {
+            velocity.y = HelperMoveToward(velocity.y, SPEEDYMAX, GRAVITY * delta);
+        }
 
         // Jump
-        if (IsOnFloor() && justPressedJump)
+        if ((IsOnFloor() || coyoteFrame <= COYOTEFRAMES) && justPressedJump)
         {
             isJumping = true;
+            coyoteFrame = COYOTEFRAMES + 1;
         }
 
         // Wall Jump
