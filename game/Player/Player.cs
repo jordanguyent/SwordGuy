@@ -21,9 +21,10 @@ public class Player : KinematicBody2D
     // Constants
     [Export] int ACCELERATION = 1000;
     [Export] int ATTACKACCELERATION = 2000;
-    [Export] int ATTACKDELTAFRAMES = 5;
-    [Export] int ATTACKFRAMES = 10;
+    [Export] int ATTACKDELTAFRAMES = 7;
+    [Export] int ATTACKFRAMES = 12;
     [Export] int ATTACKMAGNITUDE = 200;
+    [Export] int ATTACKTOTAL = 1;
     [Export] int COYOTEFRAMES = 3;
     [Export] int GRAVITY = 500;
     [Export] int INPUTBUFFERFRAMES = 5;
@@ -42,6 +43,7 @@ public class Player : KinematicBody2D
     private Vector2 velocity = Vector2.Zero;
     private float inputX = 0;
     private float wallCollisionX = 0;
+    private int attackCount = 0;
     private int attackFrame = 0;
     private int coyoteFrame = 0;
     private int jumpBufferFrame = 0;
@@ -96,22 +98,28 @@ public class Player : KinematicBody2D
 
             case PlayerState.Move:
 
-                // [ TODO ] Add coyote frames
+                // [ TODO ] Add spikes
+                // [ TODO ] Implement clever attack cooldown
 
                 SetInputs();
-
-                if (isAttacking)
-                {
-                    state = PlayerState.Attack;
-                    attackDirection = GetLocalMousePosition().Normalized();
-                }
-
                 HandleCoyoteFrames();
                 UpdateVelocityX(delta);
                 UpdateVelocityY(delta);
 
                 velocity = MoveAndSlide(velocity, E2);
                 Position = Position.Snapped(Vector2.One);
+
+                if (isAttacking && attackCount < ATTACKTOTAL)
+                {
+                    state = PlayerState.Attack;
+                    attackCount++;
+                    attackDirection = GetLocalMousePosition().Normalized();
+                }
+                else if (IsOnFloor())
+                {
+                    attackCount = 0;
+                }
+
                 break;
 
             case PlayerState.Still:
@@ -128,7 +136,7 @@ public class Player : KinematicBody2D
     private void AttackTowardMouse(float delta)
     {
         int frameDif = ATTACKFRAMES - attackFrame;    
-        if (frameDif <= ATTACKDELTAFRAMES)
+        if (frameDif < ATTACKDELTAFRAMES)
         {
             velocity = velocity.MoveToward(Vector2.Zero, ATTACKACCELERATION * delta);
         }
@@ -145,7 +153,7 @@ public class Player : KinematicBody2D
             selfBool = true;
         }
 
-        if (selfBool && inputBufferFrames <= INPUTBUFFERFRAMES)
+        if (selfBool && inputBufferFrames < INPUTBUFFERFRAMES)
         {
             inputBufferFrames++;
             // [ WARNING ] Because isJumping does not reset the moment when jump, may cause issues here.
@@ -183,7 +191,7 @@ public class Player : KinematicBody2D
 
     private void HandleCoyoteFrames()
     {
-        if (coyoteFrame <= COYOTEFRAMES)
+        if (coyoteFrame < COYOTEFRAMES)
         {
             coyoteFrame++;
         }
@@ -195,7 +203,7 @@ public class Player : KinematicBody2D
 
         if (isAttacking)
         {
-            coyoteFrame = COYOTEFRAMES + 1;
+            coyoteFrame = COYOTEFRAMES;
         }
     }
 
@@ -219,10 +227,10 @@ public class Player : KinematicBody2D
 
     private void UpdateVelocityY(float delta)
     {
-        // [ TODO ] Make where the conditions that determine if you can do stuff like isJumping and canWallJump into a separate function
+        // [ CONSIDER ] Make where the conditions that determine if you can do stuff like isJumping and canWallJump into a separate function
         
         // Gravity
-        if (!IsOnFloor() && coyoteFrame <= COYOTEFRAMES)
+        if (!IsOnFloor() && coyoteFrame < COYOTEFRAMES)
         {
             velocity.y = 0;
         }
@@ -232,10 +240,10 @@ public class Player : KinematicBody2D
         }
 
         // Jump
-        if ((IsOnFloor() || coyoteFrame <= COYOTEFRAMES) && justPressedJump)
+        if ((IsOnFloor() || coyoteFrame < COYOTEFRAMES) && justPressedJump)
         {
             isJumping = true;
-            coyoteFrame = COYOTEFRAMES + 1;
+            coyoteFrame = COYOTEFRAMES;
         }
 
         // Wall Jump
