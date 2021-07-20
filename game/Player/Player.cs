@@ -77,7 +77,6 @@ public class Player : KinematicBody2D
         switch (state)
         {
             case PlayerState.Attack:
-            
                 AttackTowardMouse(delta);
                 velocity = MoveAndSlide(velocity, E2);
 
@@ -87,9 +86,13 @@ public class Player : KinematicBody2D
                     attackFrame = 0;
                     state = PlayerState.Still;
                 }
+
+                HandleEffectCollisions();
+
                 break;
 
             case PlayerState.Death:
+                GetTree().ReloadCurrentScene();
                 break;
 
             case PlayerState.Init:
@@ -119,6 +122,8 @@ public class Player : KinematicBody2D
                 {
                     attackCount = 0;
                 }
+
+                HandleEffectCollisions();
 
                 break;
 
@@ -204,6 +209,21 @@ public class Player : KinematicBody2D
         if (isAttacking)
         {
             coyoteFrame = COYOTEFRAMES;
+        }
+    }
+
+    private void HandleEffectCollisions()
+    {
+        int collisionCount = GetSlideCount();
+
+        for(int i = 0; i < collisionCount; i++)
+        {
+            KinematicCollision2D currentCollision = GetSlideCollision(i);
+            Godot.Object collidedWith = currentCollision.Collider;
+            if ((collidedWith as DangerTMs) != null)
+            {
+                state = PlayerState.Death;
+            }
         }
     }
 
