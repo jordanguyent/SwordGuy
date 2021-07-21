@@ -32,6 +32,7 @@ public class PlayerCamera : Camera2D
 
         CAMERAWIDTH = (int) GetViewport().GetVisibleRect().Size.x;
         CAMERAHEIGHT = (int) GetViewport().GetVisibleRect().Size.y;
+
         MakeCurrent();
     }
 
@@ -41,7 +42,7 @@ public class PlayerCamera : Camera2D
         {
             case CameraState.Active: // Standard
                 ArriveTo(parent.Position + offset, delta);
-                ClampViewport(0, 256, 0, 144); // Temp values
+                ClampViewport(x1, x2, y1, y2); // Temp values
                 break;
 
             case CameraState.Init: // On start
@@ -102,5 +103,15 @@ public class PlayerCamera : Camera2D
 		}
 
 		Position = new Vector2(x, y);
+    }
+
+    // Signals ================================================================================================================================================
+    private void ChangeSettings(int a1, int a2, int b1, int b2, Vector2 os)
+    {
+        x1 = a1;
+        x2 = a2;
+        y1 = b1;
+        y2 = b2;
+        offset = os;
     }
 }
