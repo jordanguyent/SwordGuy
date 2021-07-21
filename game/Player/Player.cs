@@ -43,7 +43,7 @@ public class Player : KinematicBody2D
     private Vector2 velocity = Vector2.Zero;
     private float inputX = 0;
     private float wallCollisionX = 0;
-    private int attackCount = 0;
+    public int attackCount = 0; // Temp public
     private int attackFrame = 0;
     private int coyoteFrame = 0;
     private int jumpBufferFrame = 0;
@@ -52,7 +52,7 @@ public class Player : KinematicBody2D
     private int stillFrame = 0;
     private bool canWallJump = false;
     private bool holdingJump = false;
-    private bool isAttacking = false;
+    private bool isAttacking = false; 
     private bool isJumping = false;
     private bool isWallJumping = false;
     private bool justPressedJump = false;
@@ -101,8 +101,8 @@ public class Player : KinematicBody2D
 
             case PlayerState.Move:
 
-                // [ TODO ] Add spikes
-                // [ TODO ] Implement clever attack cooldown
+                // [ TODO ] Implement camera follow.
+                // Make like celeste. All on one stage.
 
                 SetInputs();
                 HandleCoyoteFrames();

@@ -1,8 +1,9 @@
-[gd_scene load_steps=7 format=2]
+[gd_scene load_steps=8 format=2]
 
 [ext_resource path="res://Player/Player.cs" type="Script" id=1]
 [ext_resource path="res://Sprites/Player.png" type="Texture" id=2]
 [ext_resource path="res://Player/Arrow.tscn" type="PackedScene" id=3]
+[ext_resource path="res://Player/PlayerCamera.tscn" type="PackedScene" id=4]
 
 [sub_resource type="AtlasTexture" id=1]
 atlas = ExtResource( 2 )
@@ -40,3 +41,5 @@ enabled = true
 cast_to = Vector2( -3.9, 0 )
 
 [node name="Arrow" parent="." instance=ExtResource( 3 )]
+
+[node name="PlayerCamera" parent="." instance=ExtResource( 4 )]
