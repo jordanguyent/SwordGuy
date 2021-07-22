@@ -16,7 +16,7 @@ public class CamSettingArea : Area2D
 
     public override void _Ready()
     {
-        camera = GetNode<PlayerCamera>("../Player/PlayerCamera");
+        camera = GetNode<PlayerCamera>("/root/World/Player/PlayerCamera");
         
         Connect("area_entered", this, "OnAreaEntered");
         Connect("camera_settings", camera, "ChangeSettings");

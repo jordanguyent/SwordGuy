@@ -92,6 +92,8 @@ public class Player : KinematicBody2D
                 break;
 
             case PlayerState.Death:
+                // [ TODO ] When die, have camera pan back to player
+                // [ CONSIDER ] create a transition for death and respawn
                 GetTree().ReloadCurrentScene();
                 break;
 
@@ -101,7 +103,8 @@ public class Player : KinematicBody2D
 
             case PlayerState.Move:
 
-                // [ TODO ] Implement camera follow.
+                // [ TODO ] Create checkpoint
+                // [ TODO ] Make test levels
                 // Make like celeste. All on one stage.
 
                 SetInputs();

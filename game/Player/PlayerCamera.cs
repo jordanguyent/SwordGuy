@@ -6,8 +6,7 @@ public class PlayerCamera : Camera2D
     enum CameraState
     {
         Init,
-        Active,
-        Transition
+        Active
     }
 
     // Camera Constants
@@ -17,8 +16,9 @@ public class PlayerCamera : Camera2D
     // Camera Variables
     private CameraState state = CameraState.Init;
     private Vector2 offset;
+    private Vector2 target;
     private float smoothingDuration = 0.2f;
-    private int loadDelay = 1;
+    private int loadDelay = 2;
     private int x1, x2, y1, y2;
 
     // Nodes
@@ -32,43 +32,51 @@ public class PlayerCamera : Camera2D
 
         CAMERAWIDTH = (int) GetViewport().GetVisibleRect().Size.x;
         CAMERAHEIGHT = (int) GetViewport().GetVisibleRect().Size.y;
-
-        MakeCurrent();
     }
 
     public override void _PhysicsProcess(float delta)
-    {
+    {   
         switch (state)
         {
-            case CameraState.Active: // Standard
-                ArriveTo(parent.Position + offset, delta);
-                ClampViewport(x1, x2, y1, y2); // Temp values
+            case CameraState.Active:
+                target = parent.Position + offset;
+                target = ClampViewport(target, x1, x2, y1, y2);
+                ArriveTo(target, delta);
                 break;
 
-            case CameraState.Init: // On start
+            case CameraState.Init:
                 loadDelay--;
+
+                target = parent.Position + offset;
+                target = ClampViewport(target, x1, x2, y1, y2);
+                Position = target;
+
                 if (loadDelay <= 0)
                 {
                     state = CameraState.Active;
-                    Position = parent.Position + offset;
+                    MakeCurrent();
                 }
-                break;
-
-            case CameraState.Transition:
                 break;
         }
     }
 
-    public void ArriveTo(Vector2 targetPosition, float delta)
+    private void ArriveTo(Vector2 targetPosition, float delta)
 	{
 		Vector2 distance = new Vector2(targetPosition.x - Position.x, targetPosition.y - Position.y);
-		Position += distance / smoothingDuration * delta;
-		Position = Position.Snapped(Vector2.One);
+        distance = distance.Snapped(Vector2.One);
+		Position += distance / smoothingDuration * delta; 
+        if (distance == Vector2.Zero)
+        {
+            Position = Position.Snapped(Vector2.One);
+        }
+        // [ CONSIDER ] Add current position and then make current position snap and return result to position
+        // Make more pixelated feel.
+		// Position = Position.Snapped(Vector2.One);
 
 		ForceUpdateScroll();
 	}
 
-    public void ClampViewport(int a1, int a2, int b1, int b2)
+    private Vector2 ClampViewport(Vector2 tg, int a1, int a2, int b1, int b2)
     {
         float x;
 		float y;
@@ -76,33 +84,33 @@ public class PlayerCamera : Camera2D
 		int cameraPaddingX = CAMERAWIDTH / 2;
 		int cameraPaddingY = CAMERAHEIGHT / 2;
 
-		if (Position.x - cameraPaddingX < x1)
+		if (tg.x - cameraPaddingX < x1)
 		{
 			x = a1 + cameraPaddingX;
 		} 
-		else if (Position.x + cameraPaddingX > x2)
+		else if (tg.x + cameraPaddingX > x2)
 		{
 			x = a2 - cameraPaddingX;
 		}
 		else 
 		{
-			x = Position.x;
+			x = tg.x;
 		}
 
-		if (Position.y - cameraPaddingY < y1)
+		if (tg.y - cameraPaddingY < y1)
 		{
 			y = b1 + cameraPaddingY;
 		}
-		else if (Position.y + cameraPaddingY > y2)
+		else if (tg.y + cameraPaddingY > y2)
 		{
 			y = b2 - cameraPaddingY;
 		}
 		else 
 		{
-			y = Position.y;
+			y = tg.y;
 		}
 
-		Position = new Vector2(x, y);
+		return new Vector2(x, y);
     }
 
     // Signals ================================================================================================================================================
