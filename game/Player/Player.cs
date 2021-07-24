@@ -96,7 +96,7 @@ public class Player : KinematicBody2D
                 // [ TODO ] When die, have camera pan back to player
                 // [ CONSIDER ] create a transition for death and respawn
                 Position = spawnPoint;
-                state = PlayerState.Init;
+                Reset();
                 //GetTree().ReloadCurrentScene();
                 break;
 
@@ -246,6 +246,30 @@ public class Player : KinematicBody2D
         BufferJustPressedInput(ref justPressedJump, ref jumpBufferFrame, "ui_jump", isJumping);
     }
 
+    private void Reset()
+    {
+        state = PlayerState.Init;
+        attackDirection = Vector2.Zero;
+        direction = Vector2.Zero;
+        spawnPoint = Vector2.Zero;
+        velocity = Vector2.Zero;
+        inputX = 0;
+        wallCollisionX = 0;
+        attackCount = 0;
+        attackFrame = 0;
+        coyoteFrame = 0;
+        jumpBufferFrame = 0;
+        jumpFrame = 0;
+        lockFrame = 0;
+        stillFrame = 0;
+        canWallJump = false;
+        holdingJump = false;
+        isAttacking = false; 
+        isJumping = false;
+        isWallJumping = false;
+        justPressedJump = false;
+    }
+
     private void UpdateVelocityX(float delta)
     {
         velocity.x = HelperMoveToward(velocity.x, inputX * SPEEDXMAX, ACCELERATION * delta);
@@ -331,6 +355,11 @@ public class Player : KinematicBody2D
     }
 
     // Signals ================================================================================================================================================
+    private void ResetDash(object area)
+    {
+        attackCount = 0;
+    }
+
     private void UpdateCheckpoint(Vector2 pos)
     {
         spawnPoint = pos;
