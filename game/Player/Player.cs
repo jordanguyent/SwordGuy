@@ -4,6 +4,8 @@ using System.Diagnostics;
 
 public class Player : KinematicBody2D
 {
+    // [ TODO ] When pressing space and then attack right after, notice how player does a weird double jump thing. Probably has to do with holdingJump
+    // and the frames not setting to MaxFrames
 
     enum PlayerState
     {
@@ -32,7 +34,7 @@ public class Player : KinematicBody2D
     [Export] int JUMPMAGNITUDE = 100;
     [Export] int LOCKFRAMES = 5;
     [Export] int SPEEDXMAX = 50;
-    [Export] int SPEEDYMAX = 300;
+    [Export] int SPEEDYMAX = 200;
     [Export] int STILLFRAMES = 5;
     [Export] int WALLJUMPMAGX = 140;
 
@@ -248,6 +250,7 @@ public class Player : KinematicBody2D
 
     private void Reset()
     {
+        GD.Print("Reset");
         state = PlayerState.Init;
         attackDirection = Vector2.Zero;
         direction = Vector2.Zero;

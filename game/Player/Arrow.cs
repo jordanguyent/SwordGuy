@@ -15,6 +15,7 @@ public class Arrow : Node2D
     public override void _PhysicsProcess(float delta)
     {
         LookAt(GetGlobalMousePosition());
+        
         // Testing Purpose =================================
         if (player.attackCount > 0)
         {
