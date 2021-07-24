@@ -40,6 +40,7 @@ public class Player : KinematicBody2D
     private PlayerState state = PlayerState.Init;
     private Vector2 attackDirection = Vector2.Zero;
     private Vector2 direction = Vector2.Zero;
+    private Vector2 spawnPoint = Vector2.Zero;
     private Vector2 velocity = Vector2.Zero;
     private float inputX = 0;
     private float wallCollisionX = 0;
@@ -94,7 +95,9 @@ public class Player : KinematicBody2D
             case PlayerState.Death:
                 // [ TODO ] When die, have camera pan back to player
                 // [ CONSIDER ] create a transition for death and respawn
-                GetTree().ReloadCurrentScene();
+                Position = spawnPoint;
+                state = PlayerState.Init;
+                //GetTree().ReloadCurrentScene();
                 break;
 
             case PlayerState.Init:
@@ -325,5 +328,12 @@ public class Player : KinematicBody2D
                 }
             }
         }
+    }
+
+    // Signals ================================================================================================================================================
+    private void UpdateCheckpoint(Vector2 pos)
+    {
+        spawnPoint = pos;
+        GD.Print("Checkpoint Updated : " + spawnPoint);
     }
 }

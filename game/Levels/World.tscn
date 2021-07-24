@@ -1,9 +1,10 @@
-[gd_scene load_steps=6 format=2]
+[gd_scene load_steps=7 format=2]
 
 [ext_resource path="res://Player/Player.tscn" type="PackedScene" id=1]
 [ext_resource path="res://TileMaps/BlockTMs.tscn" type="PackedScene" id=2]
 [ext_resource path="res://TileMaps/DangerTMs.tscn" type="PackedScene" id=3]
 [ext_resource path="res://Player/CamSettingArea.tscn" type="PackedScene" id=4]
+[ext_resource path="res://Player/Checkpoint.tscn" type="PackedScene" id=5]
 
 [sub_resource type="RectangleShape2D" id=1]
 extents = Vector2( 120, 72 )
@@ -11,10 +12,11 @@ extents = Vector2( 120, 72 )
 [node name="World" type="Node2D"]
 
 [node name="BlueGray" type="ColorRect" parent="."]
-margin_right = 288.0
-margin_bottom = 184.0
+margin_right = 984.0
+margin_bottom = 416.0
 color = Color( 0.443137, 0.556863, 0.603922, 1 )
 __meta__ = {
+"_edit_lock_": true,
 "_edit_use_anchors_": false
 }
 
@@ -23,6 +25,7 @@ tile_data = PoolIntArray( 0, 0, 0, 1, 0, 0, 2, 0, 0, 3, 0, 0, 4, 0, 0, 5, 0, 0, 
 
 [node name="DangerTMs" parent="." instance=ExtResource( 3 )]
 cell_size = Vector2( 8, 8 )
+tile_data = PoolIntArray( 983062, 0, 0 )
 
 [node name="Player" parent="." instance=ExtResource( 1 )]
 position = Vector2( 224, 120 )
@@ -34,13 +37,17 @@ position = Vector2( 120, 72 )
 shape = SubResource( 1 )
 
 [node name="CamSettingArea2" parent="." instance=ExtResource( 4 )]
-position = Vector2( 368, 72 )
+position = Vector2( 376, 72 )
 leftBound = 240
 rightBound = 600
 
 [node name="CollisionShape2D" parent="CamSettingArea2" index="0"]
-position = Vector2( 8, 0 )
 shape = SubResource( 1 )
+
+[node name="Node" type="Node" parent="."]
+
+[node name="Checkpoint" parent="Node" instance=ExtResource( 5 )]
+position = Vector2( 264, 120 )
 
 [editable path="CamSettingArea"]
 
