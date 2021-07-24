@@ -4,16 +4,16 @@
 [ext_resource path="res://TileMaps/DangerTMs.cs" type="Script" id=2]
 
 [sub_resource type="ConvexPolygonShape2D" id=1]
-points = PoolVector2Array( 8, 8, 0, 8, 0, 4, 8, 4 )
+points = PoolVector2Array( 7, 8, 1, 8, 1, 4, 7, 4 )
 
 [sub_resource type="ConvexPolygonShape2D" id=2]
-points = PoolVector2Array( 4, 8, 0, 8, 0, 0, 4, 0 )
+points = PoolVector2Array( 4, 7, 0, 7, 0, 1, 4, 1 )
 
 [sub_resource type="ConvexPolygonShape2D" id=3]
-points = PoolVector2Array( 8, 4, 0, 4, 0, 0, 8, 0 )
+points = PoolVector2Array( 7, 4, 1, 4, 1, 0, 7, 0 )
 
 [sub_resource type="ConvexPolygonShape2D" id=4]
-points = PoolVector2Array( 8, 8, 3, 8, 3, 0, 8, 0 )
+points = PoolVector2Array( 8, 7, 3, 7, 3, 1, 8, 1 )
 
 [sub_resource type="TileSet" id=5]
 0/name = "SpikesTS.png 0"
