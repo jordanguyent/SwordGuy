@@ -49,6 +49,16 @@ position = Vector2( 0, 3.9 )
 enabled = true
 cast_to = Vector2( -3.9, 0 )
 
+[node name="FloorCollisionRayR" type="RayCast2D" parent="."]
+position = Vector2( 2.9, 3.9 )
+enabled = true
+cast_to = Vector2( 0, 1 )
+
+[node name="FloorCollisionRayL" type="RayCast2D" parent="."]
+position = Vector2( -2.9, 3.9 )
+enabled = true
+cast_to = Vector2( 0, 1 )
+
 [node name="Arrow" parent="." instance=ExtResource( 3 )]
 
 [node name="PlayerCamera" parent="." instance=ExtResource( 4 )]

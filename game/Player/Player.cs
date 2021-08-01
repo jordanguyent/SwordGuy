@@ -6,6 +6,7 @@ public class Player : KinematicBody2D
 {
     // [ TODO ] When pressing space and then attack right after, notice how player does a weird double jump thing. Probably has to do with holdingJump
     // and the frames not setting to MaxFrames
+    // [ TODO ] can immedately wall jump after attack to act like a dash
 
     enum PlayerState
     {
@@ -44,7 +45,8 @@ public class Player : KinematicBody2D
     private Vector2 direction = Vector2.Zero;
     private Vector2 spawnPoint = Vector2.Zero;
     private Vector2 velocity = Vector2.Zero;
-    private float inputX = 0;
+    private float previousLeftRightInput = 0;
+    private float recentLeftRightInput = 0;
     private float wallCollisionX = 0;
     public int attackCount = 0; // Temp public
     private int attackFrame = 0;
@@ -59,11 +61,20 @@ public class Player : KinematicBody2D
     private bool isJumping = false;
     private bool isWallJumping = false;
     private bool justPressedJump = false;
+    private bool justPressedLeft = false;
+    private bool justPressedRight = false;
+    private bool justReleasedLeft = false;
+    private bool justReleasedRight = false;
+    private bool pressedLeft = false;
+    private bool pressedRight = false;
 
     // Nodes
     AnimatedSprite playerSprite = null;
+    RayCast2D floorCollisionRayR = null;
+    RayCast2D floorCollisionRayL = null;
     RayCast2D wallCollisionRayR = null;
     RayCast2D wallCollisionRayL = null;
+    
 
 
     public override void _Ready()
@@ -71,35 +82,40 @@ public class Player : KinematicBody2D
         ErrorHandler();
 
         playerSprite = GetNode<AnimatedSprite>("AnimatedSprite");
+        floorCollisionRayR = GetNode<RayCast2D>("FloorCollisionRayR");
+        floorCollisionRayL = GetNode<RayCast2D>("FloorCollisionRayL");
         wallCollisionRayR = GetNode<RayCast2D>("WallCollisionRayR");
         wallCollisionRayL = GetNode<RayCast2D>("WallCollisionRayL");
     }
 
     public override void _PhysicsProcess(float delta)
     {
+        // Actions
+        // Animation
+        // Transition
+
         switch (state)
         {
             case PlayerState.Attack:
+                HandleEffectCollisions();
                 AttackTowardMouse(delta);
                 velocity = MoveAndSlide(velocity, E2);
 
                 attackFrame++;
                 if (attackFrame >= ATTACKFRAMES)
                 {
+                    jumpFrame = 0;
+                    isJumping = false;
                     attackFrame = 0;
                     state = PlayerState.Still;
                 }
-
-                HandleEffectCollisions();
-
                 break;
 
             case PlayerState.Death:
-                // [ TODO ] When die, have camera pan back to player
                 // [ CONSIDER ] create a transition for death and respawn
                 Position = spawnPoint;
+
                 Reset();
-                //GetTree().ReloadCurrentScene();
                 break;
 
             case PlayerState.Init:
@@ -107,13 +123,9 @@ public class Player : KinematicBody2D
                 break;
 
             case PlayerState.Move:
-
-                // [ TODO ] Create checkpoint
-                // [ TODO ] Make test levels
-                // Make like celeste. All on one stage.
-
                 SetInputs();
                 HandleCoyoteFrames();
+                HandleEffectCollisions();
                 UpdateVelocityX(delta);
                 UpdateVelocityY(delta);
 
@@ -123,21 +135,24 @@ public class Player : KinematicBody2D
                 if (isAttacking && attackCount < ATTACKTOTAL)
                 {
                     state = PlayerState.Attack;
+
+                    // Update attack vars
                     attackCount++;
                     attackDirection = GetLocalMousePosition().Normalized();
                 }
-                else if (IsOnFloor())
+                else if (RayIsOnFloor())
                 {
                     attackCount = 0;
                 }
-
-                HandleEffectCollisions();
-
                 break;
 
             case PlayerState.Still:
+                SetInputs();
+                CheckIfCanJump();
+                CheckIfCanWallJump();
+
                 stillFrame++;
-                if (stillFrame >= STILLFRAMES)
+                if (stillFrame >= STILLFRAMES || isJumping)
                 {
                     state = PlayerState.Move;
                     stillFrame = 0;
@@ -169,7 +184,6 @@ public class Player : KinematicBody2D
         if (selfBool && inputBufferFrames < INPUTBUFFERFRAMES)
         {
             inputBufferFrames++;
-            // [ WARNING ] Because isJumping does not reset the moment when jump, may cause issues here.
             if (condition)
             {
                 inputBufferFrames = 0;
@@ -180,6 +194,38 @@ public class Player : KinematicBody2D
         {
             inputBufferFrames = 0;
             selfBool = false;
+        }
+    }
+
+    private void CheckIfCanJump()
+    {
+        // Jump
+        if ((RayIsOnFloor() || coyoteFrame < COYOTEFRAMES) && justPressedJump)
+        {
+            isJumping = true;
+            coyoteFrame = COYOTEFRAMES;
+        }
+    }
+
+    private void CheckIfCanWallJump()
+    {
+        // Wall Jump
+        // [ WARNING ] At the moment, anything can be a wall. May need to make a seperate function to check for specific collision that returns bool.
+        // [ WARNING ] May have an issue when it comes to wall jumping between walls.
+        if (!RayIsOnFloor() && RayIsOnWall())
+        {
+            canWallJump = true;
+        }
+        else
+        {
+            canWallJump = false;
+        }
+
+        if (canWallJump && justPressedJump)
+        {
+            isJumping = true;
+            isWallJumping = true;
+            wallCollisionX = GetCollisionDirection().x;
         }
     }
 
@@ -209,7 +255,7 @@ public class Player : KinematicBody2D
             coyoteFrame++;
         }
 
-        if (IsOnFloor())
+        if (RayIsOnFloor())
         {
             coyoteFrame = 0;
         }
@@ -235,92 +281,11 @@ public class Player : KinematicBody2D
         }
     }
 
-    private float HelperMoveToward(float current, float desire, float acceleration)
-	{
-		return (E1 * current).MoveToward(E1 * desire, acceleration).x;
-	}
-
-    private void SetInputs()
+    private void HandleJumpAndWallJump()
     {
-        inputX = Input.GetActionStrength("ui_right") - Input.GetActionStrength("ui_left");
-        isAttacking = Input.IsActionJustPressed("ui_attack");
-        holdingJump = Input.IsActionPressed("ui_jump");
-        BufferJustPressedInput(ref justPressedJump, ref jumpBufferFrame, "ui_jump", isJumping);
-    }
-
-    private void Reset()
-    {
-        GD.Print("Reset");
-        state = PlayerState.Init;
-        attackDirection = Vector2.Zero;
-        direction = Vector2.Zero;
-        spawnPoint = Vector2.Zero;
-        velocity = Vector2.Zero;
-        inputX = 0;
-        wallCollisionX = 0;
-        attackCount = 0;
-        attackFrame = 0;
-        coyoteFrame = 0;
-        jumpBufferFrame = 0;
-        jumpFrame = 0;
-        lockFrame = 0;
-        stillFrame = 0;
-        canWallJump = false;
-        holdingJump = false;
-        isAttacking = false; 
-        isJumping = false;
-        isWallJumping = false;
-        justPressedJump = false;
-    }
-
-    private void UpdateVelocityX(float delta)
-    {
-        velocity.x = HelperMoveToward(velocity.x, inputX * SPEEDXMAX, ACCELERATION * delta);
-    }
-
-    private void UpdateVelocityY(float delta)
-    {
-        // [ CONSIDER ] Make where the conditions that determine if you can do stuff like isJumping and canWallJump into a separate function
-        
-        // Gravity
-        if (!IsOnFloor() && coyoteFrame < COYOTEFRAMES)
-        {
-            velocity.y = 0;
-        }
-        else 
-        {
-            velocity.y = HelperMoveToward(velocity.y, SPEEDYMAX, GRAVITY * delta);
-        }
-
-        // Jump
-        if ((IsOnFloor() || coyoteFrame < COYOTEFRAMES) && justPressedJump)
-        {
-            isJumping = true;
-            coyoteFrame = COYOTEFRAMES;
-        }
-
-        // Wall Jump
-        // [ CONSIDER ] Make it timed walled jumps that jump at the apex of jump.
-        // [ WARNING ] At the moment, anything can be a wall. May need to make a seperate function to check for specific collision that returns bool.
-        // [ WARNING ] May have an issue when it comes to wall jumping between walls.
-        if (!IsOnFloor() && (wallCollisionRayR.IsColliding() || wallCollisionRayL.IsColliding()))
-        {
-            canWallJump = true;
-        }
-        else
-        {
-            canWallJump = false;
-        }
-
-        if (canWallJump && justPressedJump)
-        {
-            isJumping = true;
-            isWallJumping = true;
-            wallCollisionX = GetCollisionDirection().x;
-        }
-
         if (isJumping)
         {
+            // Wall Jump
             if (isWallJumping)
             {
                 velocity.x = WALLJUMPMAGX * wallCollisionX;              
@@ -336,6 +301,7 @@ public class Player : KinematicBody2D
                     }
                 }   
             }
+            // Jump
             else
             {
                 if (holdingJump)
@@ -355,6 +321,124 @@ public class Player : KinematicBody2D
                 }
             }
         }
+        else
+        {
+            jumpFrame = 0;
+            lockFrame = 0;
+            isWallJumping = false;
+        }
+    }
+
+    private float HelperMoveToward(float current, float desire, float acceleration)
+	{
+		return (E1 * current).MoveToward(E1 * desire, acceleration).x;
+	}
+
+    private bool RayIsOnFloor()
+    {
+        return floorCollisionRayR.IsColliding() || floorCollisionRayL.IsColliding();
+    }
+
+    private bool RayIsOnWall()
+    {
+        return wallCollisionRayR.IsColliding() || wallCollisionRayL.IsColliding();
+    }
+
+    private void Reset()
+    {
+        GD.Print("Reset");
+        state = PlayerState.Init;
+        attackDirection = Vector2.Zero;
+        direction = Vector2.Zero;
+        velocity = Vector2.Zero;
+        recentLeftRightInput = 0;
+        wallCollisionX = 0;
+        attackCount = 0;
+        attackFrame = 0;
+        coyoteFrame = 0;
+        jumpBufferFrame = 0;
+        jumpFrame = 0;
+        lockFrame = 0;
+        stillFrame = 0;
+        canWallJump = false;
+        holdingJump = false;
+        isAttacking = false; 
+        isJumping = false;
+        isWallJumping = false;
+        justPressedJump = false;
+    }
+
+    private void SetInputs()
+    {
+        isAttacking = Input.IsActionJustPressed("ui_attack");
+        holdingJump = Input.IsActionPressed("ui_jump");
+        justPressedLeft = Input.IsActionJustPressed("ui_left");
+        justPressedRight = Input.IsActionJustPressed("ui_right");
+        justReleasedLeft = Input.IsActionJustReleased("ui_left");
+        justReleasedRight = Input.IsActionJustReleased("ui_right");
+        pressedLeft = Input.IsActionPressed("ui_left");
+        pressedRight = Input.IsActionPressed("ui_right");
+        
+        if (justPressedLeft)
+        {
+            previousLeftRightInput = recentLeftRightInput;
+            recentLeftRightInput = -1;
+        }
+        else if (justPressedRight)
+        {
+            previousLeftRightInput = recentLeftRightInput;
+            recentLeftRightInput = 1;
+        }
+
+        if (justReleasedLeft)
+        {
+            if (recentLeftRightInput == -1 && pressedRight)
+            {
+                recentLeftRightInput = previousLeftRightInput;
+            }
+        }
+        else if (justReleasedRight)
+        {
+            if (recentLeftRightInput == 1 && pressedLeft)
+            {
+                recentLeftRightInput = previousLeftRightInput;
+            }
+        }
+
+        if (!pressedLeft && !pressedRight)
+        {
+            previousLeftRightInput = recentLeftRightInput;
+            recentLeftRightInput = 0;
+        }
+        
+        BufferJustPressedInput(ref justPressedJump, ref jumpBufferFrame, "ui_jump", isJumping);
+    }
+
+    private void UpdateVelocityX(float delta)
+    {
+        // last action takes priority
+        
+        velocity.x = HelperMoveToward(velocity.x, recentLeftRightInput * SPEEDXMAX, ACCELERATION * delta);
+    }
+
+    private void UpdateVelocityY(float delta)
+    {
+        // [ CONSIDER ] Make where the conditions that determine if you can do stuff like isJumping and canWallJump into a separate function
+        
+        // Gravity
+        if (!RayIsOnFloor() && coyoteFrame < COYOTEFRAMES)
+        {
+            velocity.y = 0;
+        }
+        else
+        {
+            velocity.y = HelperMoveToward(velocity.y, SPEEDYMAX, GRAVITY * delta);
+        }
+
+        // Handles jumping and wall jumping
+        CheckIfCanJump();
+        CheckIfCanWallJump();
+        HandleJumpAndWallJump();
     }
 
     // Signals ================================================================================================================================================

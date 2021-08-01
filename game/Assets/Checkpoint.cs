@@ -12,7 +12,7 @@ public class Checkpoint : Area2D
 
     public override void _Ready()
     {
-        SPAWNPOINT = Position + (Vector2.Down * 5);
+        SPAWNPOINT = Position + (Vector2.Down * 4);
 
         player = GetNode<Player>("/root/World/Player");
 
