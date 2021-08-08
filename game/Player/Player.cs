@@ -4,11 +4,18 @@ using System.Diagnostics;
 
 public class Player : KinematicBody2D
 {
-    // [ TODO ] When pressing space and then attack right after, notice how player does a weird double jump thing. Probably has to do with holdingJump
-    // and the frames not setting to MaxFrames
-    // [ TODO ] can immedately wall jump after attack to act like a dash
+    // [ TODO ] Add attack animation
+    // [ TODO ] Disappearing blocks
+    // [ TODO ] Buttons and doors
+    // [ TODO ] Breakable blocks
+    // [ TODO ] Blocks attached to a rope. Cut rope makes block fall. 
+    // [ TODO ] Deflect projectiles to the opposite direction
 
-    enum PlayerState
+    // [ CONSIDER ] Add pause frames on attack hit
+
+    [Signal] public delegate void attack_pressed();
+
+    public enum PlayerState
     {
         Attack,
         Death,
@@ -70,10 +77,12 @@ public class Player : KinematicBody2D
 
     // Nodes
     AnimatedSprite playerSprite = null;
+    Area2D attackBox = null;
     RayCast2D floorCollisionRayR = null;
     RayCast2D floorCollisionRayL = null;
     RayCast2D wallCollisionRayR = null;
     RayCast2D wallCollisionRayL = null;
+    
     
 
 
@@ -82,6 +91,7 @@ public class Player : KinematicBody2D
         ErrorHandler();
 
         playerSprite = GetNode<AnimatedSprite>("AnimatedSprite");
+        attackBox = GetNode<Area2D>("Hitbox");
         floorCollisionRayR = GetNode<RayCast2D>("FloorCollisionRayR");
         floorCollisionRayL = GetNode<RayCast2D>("FloorCollisionRayL");
         wallCollisionRayR = GetNode<RayCast2D>("WallCollisionRayR");
@@ -97,6 +107,7 @@ public class Player : KinematicBody2D
         switch (state)
         {
             case PlayerState.Attack:
+                SetInputs();
                 HandleEffectCollisions();
                 AttackTowardMouse(delta);
                 velocity = MoveAndSlide(velocity, E2);
@@ -248,6 +259,11 @@ public class Player : KinematicBody2D
         return Vector2.Zero;
     }
 
+    public PlayerState GetState()
+    {
+        return state;
+    }
+
     private void HandleCoyoteFrames()
     {
         if (coyoteFrame < COYOTEFRAMES)
@@ -351,7 +367,8 @@ public class Player : KinematicBody2D
         attackDirection = Vector2.Zero;
         direction = Vector2.Zero;
         velocity = Vector2.Zero;
-        recentLeftRightInput = 0;
+        // [ WARNING ] This makes it feel a little weird when respawning, cannot move right away. May need to fix.
+        recentLeftRightInput = 0; 
         wallCollisionX = 0;
         attackCount = 0;
         attackFrame = 0;
