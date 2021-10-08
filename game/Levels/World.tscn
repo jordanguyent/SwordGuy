@@ -164,6 +164,7 @@ position = Vector2( 0, -16 )
 shape = SubResource( 3 )
 
 [node name="CamSettings" type="Node2D" parent="."]
+visible = false
 
 [node name="CamSettingArea" parent="CamSettings" instance=ExtResource( 4 )]
 position = Vector2( 120, 72 )
@@ -195,6 +196,7 @@ rightBound = 1240
 topBound = -144
 
 [node name="CollisionShape2D" parent="CamSettings/CamSettingArea4" index="0"]
+position = Vector2( -32, 0 )
 shape = SubResource( 7 )
 
 [node name="CamSettingArea5" parent="CamSettings" instance=ExtResource( 4 )]

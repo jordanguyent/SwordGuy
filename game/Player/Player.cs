@@ -4,12 +4,17 @@ using System.Diagnostics;
 
 public class Player : KinematicBody2D
 {
+    // [ TODO ] Slow fall on wall
+    // [ TODO ] Maintain mometum on attack
     // [ TODO ] Add attack animation
     // [ TODO ] Disappearing blocks
     // [ TODO ] Buttons and doors
     // [ TODO ] Breakable blocks
     // [ TODO ] Blocks attached to a rope. Cut rope makes block fall. 
     // [ TODO ] Deflect projectiles to the opposite direction
+
+    // Cyberpunk setting
+    // Mechanic, hit ball and teleport to it via right click.
 
     // [ CONSIDER ] Add pause frames on attack hit
 
@@ -45,6 +50,7 @@ public class Player : KinematicBody2D
     [Export] int SPEEDYMAX = 200;
     [Export] int STILLFRAMES = 5;
     [Export] int WALLJUMPMAGX = 140;
+    [Export] int WALLSLIDESPEED = 50;
 
     // Player Vars
     private PlayerState state = PlayerState.Init;
@@ -67,6 +73,7 @@ public class Player : KinematicBody2D
     private bool isAttacking = false; 
     private bool isJumping = false;
     private bool isWallJumping = false;
+    private bool isWallSliding = false;
     private bool justPressedJump = false;
     private bool justPressedLeft = false;
     private bool justPressedRight = false;
@@ -222,6 +229,7 @@ public class Player : KinematicBody2D
     {
         // Wall Jump
         // [ WARNING ] At the moment, anything can be a wall. May need to make a seperate function to check for specific collision that returns bool.
+        //              or specified collision masking
         // [ WARNING ] May have an issue when it comes to wall jumping between walls.
         if (!RayIsOnFloor() && RayIsOnWall())
         {
@@ -345,6 +353,22 @@ public class Player : KinematicBody2D
         }
     }
 
+    private void HandleWallSlide(float delta)
+    {
+        if (IsOnWall() && RayIsOnWall() && velocity.y > 0)
+        {
+            isWallSliding = true;
+            if (velocity.y > WALLSLIDESPEED)
+            {
+                velocity.y = WALLSLIDESPEED;
+            }
+        }
+        else
+        {
+            isWallSliding = false;
+        }
+    }
+
     private float HelperMoveToward(float current, float desire, float acceleration)
 	{
 		return (E1 * current).MoveToward(E1 * desire, acceleration).x;
@@ -434,7 +458,6 @@ public class Player : KinematicBody2D
     private void UpdateVelocityX(float delta)
     {
         // last action takes priority
-        
         velocity.x = HelperMoveToward(velocity.x, recentLeftRightInput * SPEEDXMAX, ACCELERATION * delta);
     }
 
@@ -456,6 +479,9 @@ public class Player : KinematicBody2D
         CheckIfCanJump();
         CheckIfCanWallJump();
         HandleJumpAndWallJump();
+
+        // Handle WallSliding
+        HandleWallSlide(delta);
     }
 
     // Signals ================================================================================================================================================
