@@ -4,9 +4,9 @@ using System.Diagnostics;
 
 public class Player : KinematicBody2D
 {
-    // [ TODO ] Slow fall on wall
-    // [ TODO ] Maintain mometum on attack
+    // [ CONSIDER ] Make it so that you can jump in between an attack.
     // [ TODO ] Add attack animation
+    // [ TODO ] Add grapple? Grapple certain mobs and objects or telleport to certain objects?
     // [ TODO ] Disappearing blocks
     // [ TODO ] Buttons and doors
     // [ TODO ] Breakable blocks
@@ -34,11 +34,12 @@ public class Player : KinematicBody2D
 	private Vector2 E2 = new Vector2(0, -1);
 
     // Constants
-    [Export] int ACCELERATION = 1000;
-    [Export] int ATTACKACCELERATION = 2000;
-    [Export] int ATTACKDELTAFRAMES = 7;
+    [Export] int ACCELERATION = 1200;
+    [Export] int ACCELERATIONINAIR = 900;
+    [Export] int ATTACKACCELERATION = 1800;
+    [Export] int ATTACKDELTAFRAMES = 11;
     [Export] int ATTACKFRAMES = 12;
-    [Export] int ATTACKMAGNITUDE = 200;
+    [Export] int ATTACKMAGNITUDE = 300;
     [Export] int ATTACKTOTAL = 1;
     [Export] int COYOTEFRAMES = 3;
     [Export] int GRAVITY = 500;
@@ -46,7 +47,7 @@ public class Player : KinematicBody2D
     [Export] int JUMPFRAMES = 8;
     [Export] int JUMPMAGNITUDE = 100;
     [Export] int LOCKFRAMES = 5;
-    [Export] int SPEEDXMAX = 50;
+    [Export] int SPEEDXMAX = 75;
     [Export] int SPEEDYMAX = 200;
     [Export] int STILLFRAMES = 5;
     [Export] int WALLJUMPMAGX = 140;
@@ -89,9 +90,6 @@ public class Player : KinematicBody2D
     RayCast2D floorCollisionRayL = null;
     RayCast2D wallCollisionRayR = null;
     RayCast2D wallCollisionRayL = null;
-    
-    
-
 
     public override void _Ready()
     {
@@ -125,7 +123,7 @@ public class Player : KinematicBody2D
                     jumpFrame = 0;
                     isJumping = false;
                     attackFrame = 0;
-                    state = PlayerState.Still;
+                    state = PlayerState.Move;
                 }
                 break;
 
@@ -148,7 +146,14 @@ public class Player : KinematicBody2D
                 UpdateVelocityY(delta);
 
                 velocity = MoveAndSlide(velocity, E2);
-                Position = Position.Snapped(Vector2.One);
+                // Position = Position.Snapped(Vector2.One);
+                
+                // Snaps the position of player to remove jitter
+                if (velocity.x == 0)
+                {
+                    Position = new Vector2((float) Math.Round(Position.x), Position.y);
+                }
+                Position = new Vector2(Position.x, (float) Math.Round(Position.y));
 
                 if (isAttacking && attackCount < ATTACKTOTAL)
                 {
@@ -157,6 +162,7 @@ public class Player : KinematicBody2D
                     // Update attack vars
                     attackCount++;
                     attackDirection = GetLocalMousePosition().Normalized();
+                    velocity = Vector2.Zero;
                 }
                 else if (RayIsOnFloor())
                 {
@@ -164,11 +170,10 @@ public class Player : KinematicBody2D
                 }
                 break;
 
-            case PlayerState.Still:
+            /*case PlayerState.Still: // State may not be needed
                 SetInputs();
                 CheckIfCanJump();
                 CheckIfCanWallJump();
-
                 stillFrame++;
                 if (stillFrame >= STILLFRAMES || isJumping)
                 {
@@ -176,6 +181,7 @@ public class Player : KinematicBody2D
                     stillFrame = 0;
                 }
                 break;
+            */
         }
     }
 
@@ -458,7 +464,14 @@ public class Player : KinematicBody2D
     private void UpdateVelocityX(float delta)
     {
         // last action takes priority
-        velocity.x = HelperMoveToward(velocity.x, recentLeftRightInput * SPEEDXMAX, ACCELERATION * delta);
+        if (RayIsOnFloor())
+        {
+            velocity.x = HelperMoveToward(velocity.x, recentLeftRightInput * SPEEDXMAX, ACCELERATION * delta);
+        }
+        else 
+        {
+            velocity.x = HelperMoveToward(velocity.x, recentLeftRightInput * SPEEDXMAX, ACCELERATIONINAIR * delta);
+        }
     }
 
     private void UpdateVelocityY(float delta)
